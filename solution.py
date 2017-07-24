@@ -34,20 +34,24 @@ def assign_value(values, box, value):
         assignments.append(values.copy())
     return values
 
-def createDiagnalUnitsInPeer():
+def createDiagnalUnits():
     diagnal_units_left_to_right = []
     diagnal_units_right_to_left = []
     for line in range(0,5):
+            """for every lines except the middle, go diagnal"""
             if line < 4:
                 diagnal_units_left_to_right.extend(cross(rows[line],cols[line]))
                 diagnal_units_right_to_left.extend(cross(rows[line],cols[(len(cols)-1)-line]))
             
                 diagnal_units_right_to_left.extend(cross(rows[(len(rows)-1)-line],cols[line]))
                 diagnal_units_left_to_right.extend(cross(rows[(len(rows)-1)-line],cols[(len(cols)-1)-line]))
+                
+                """at the middle line, add the middle box to both left and right diagnal"""
             else:
                 diagnal_units_left_to_right.extend(cross(rows[line],cols[line]))
                 diagnal_units_right_to_left.extend(cross(rows[line],cols[line]))
     
+    """add to peers"""
     for unit in diagnal_units_left_to_right:
         peers[unit].update(diagnal_units_left_to_right)
         peers[unit].remove(unit)
@@ -55,7 +59,8 @@ def createDiagnalUnitsInPeer():
     for unit in diagnal_units_right_to_left:
         peers[unit].update(diagnal_units_right_to_left)
         peers[unit].remove(unit)
-        
+    
+    """add to unitlist"""
     unitlist.append(diagnal_units_left_to_right)
     unitlist.append(diagnal_units_right_to_left)
 
@@ -98,9 +103,7 @@ def reduce_puzzle(values):
     stalled = False
     while not stalled:
         solved_values_before = len([box for box in values.keys() if len(values[box]) == 1])
-        
-
-        
+       
         values = eliminate(values)
         values = only_choice(values)
         values = naked_twins(values)
@@ -114,7 +117,7 @@ def reduce_puzzle(values):
 
 
 def solve(grid):
-    createDiagnalUnitsInPeer()
+    createDiagnalUnits()
     gridValues = grid_values(grid)
     gridValues = search(gridValues)
     
@@ -125,12 +128,14 @@ def solve(grid):
     
 def naked_twins(values):
     for unitArr in unitlist:
-        for x in range(2,8):
+        """naked twins length could go from 2 to 8 digits. """
+        for x in range(2,9):
             selectedKey = []
             selectedValue = []
             
             for unit in unitArr:    
                 if len(values[unit]) == x:
+                    """add every box which length is x"""
                     selectedKey.append(unit)
                     selectedValue.append(values[unit])
             
@@ -138,9 +143,12 @@ def naked_twins(values):
             checkUnitArr = unitArr.copy()
             deletingkey = []
             
+            """for the boxes that have the length we desired"""
             for key in selectedKey:
+                """if there are x boxes that have the same value"""
                 if selectedValue.count(values[key]) == x:
                     testSame = False
+                    """delete the naked twins out of the list that we need to eliminate"""
                     for sameKey in deletingkey:
                         if values[key] == values[sameKey]:
                             testSame = True
@@ -149,6 +157,7 @@ def naked_twins(values):
                         deletingkey.append(key)
                     checkUnitArr.remove(key)
             
+            """delete the underqualified boxs out of deletion list"""
             for un in checkUnitArr:
                 if len(values[un]) == 1:
                     checkUnitArr.remove(un)
@@ -186,16 +195,7 @@ def only_choice(values):
         for digit in '123456789':
             dplaces = [box for box in unit if digit in values[box]]
             if len(dplaces) == 1:
-                """
-                print("{}: {}", "unit" ,unit)
-                print("{}: {}", "dplaces[0]" ,dplaces[0])
-                print("{}: {}", "values[dplaces[0]] before" ,values[dplaces[0]])
                 values[dplaces[0]] = digit
-                print("{}: {}", "values[dplaces[0]] after" ,values[dplaces[0]])
-                """
-
-                values[dplaces[0]] = digit
-
     return values
 
 
@@ -212,15 +212,3 @@ if __name__ == '__main__':
     except:
         print('We could not visualize your board due to a pygame issue. Not a problem! It is not a requirement.')
         
-
- 
-    """Eliminate values using the naked twins strategy.
-    Args:
-        values(dict): a dictionary of the form {'box_name': '123456789', ...}
-
-    Returns:
-        the values dictionary with the naked twins eliminated from peers.
-    """
-
-    # Find all instances of naked twins
-    # Eliminate the naked twins as possibilities for their peers
